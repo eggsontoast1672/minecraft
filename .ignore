@@ -1,0 +1,3 @@
+# I don't want git to ignore this directory because it's where the submodules
+# live, but I also don't want fuzzy finding to look inside here.
+lib
