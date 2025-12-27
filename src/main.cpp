@@ -2,11 +2,12 @@
 #include <stdlib.h>
 
 #include <GLFW/glfw3.h>
-#include <cglm/struct.h>
 #include <glad/glad.h>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/glm.hpp>
 
-#include "minecraft/camera.h"
-#include "minecraft/shader.h"
+#include <minecraft/camera.hpp>
+#include <minecraft/shader.hpp>
 
 const float vertices[] = {
     -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f, 1.0f,
@@ -46,72 +47,79 @@ void delete_mesh(mesh_t mesh) {
   glDeleteVertexArrays(1, &mesh.vertex_array);
 }
 
-void configure_vertex_layout(void) {
+void configure_vertex_layout() {
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
 }
 
-mat4s get_projection_matrix(void) {
-  return glms_perspective(glm_rad(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+glm::mat4 get_projection_matrix() {
+  return glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+  // return glms_perspective(glm_rad(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 }
 
-void process_input(GLFWwindow *window, camera_t *camera) {
-  const float speed = 0.1f;
+void process_input(GLFWwindow *window, Camera *camera) {
+  constexpr float SPEED = 0.1f;
+
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera->position.z -= speed;
+    camera->translate({0.0f, 0.0f, -SPEED});
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    camera->position.x -= speed;
+    camera->translate({-SPEED, 0.0f, 0.0f});
   }
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera->position.z += speed;
+    camera->translate({0.0f, 0.0f, SPEED});
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    camera->position.x += speed;
+    camera->translate({SPEED, 0.0f, 0.0f});
   }
 }
 
 int main(void) {
   GLFWwindow *window;
   mesh_t mesh;
-  program_t program;
-  mat4s view, projection;
-  camera_t camera = {{{0.0f, 0.0f, 10.0f}}, {{0.0f, 0.0f, -1.0f}}};
+  Camera camera({0.0f, 0.0f, 10.0f});
 
   if (!glfwInit()) {
     fprintf(stderr, "Failed to initialize GLFW\n");
     return 1;
   }
+
   window = glfwCreateWindow(800, 600, "Minecraft", NULL, NULL);
   if (window == NULL) {
     fprintf(stderr, "Failed to create window\n");
     return 1;
   }
+
   glfwMakeContextCurrent(window);
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     fprintf(stderr, "Failed to initialize OpenGL\n");
     return 1;
   }
+
   mesh = create_mesh();
   configure_vertex_layout();
-  program = shader_program_create("assets/default.vert", "assets/default.frag");
-  glUseProgram(program);
-  projection = get_projection_matrix();
-  glUniformMatrix4fv(glGetUniformLocation(program, "u_projection"), 1, GL_FALSE,
-                     (const GLfloat *)projection.raw);
-  while (!glfwWindowShouldClose(window)) {
-    process_input(window, &camera);
-    glClear(GL_COLOR_BUFFER_BIT);
-    /* Recalculate the view matrix since it may have changed */
-    view = camera_get_matrix(camera);
-    glUniformMatrix4fv(glGetUniformLocation(program, "u_view"), 1, GL_FALSE,
-                       (const GLfloat *)view.raw);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
-    glfwSwapBuffers(window);
 
-    glfwPollEvents();
+  {
+    Shader program("assets/default.vert", "asserts/default.frag");
+    program.use();
+    glm::mat4 projection = get_projection_matrix();
+    program.set_uniform("u_projection", projection);
+
+    while (!glfwWindowShouldClose(window)) {
+      process_input(window, &camera);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      /* Recalculate the view matrix since it may have changed */
+      glm::mat4 view = camera.get_matrix();
+      program.set_uniform("u_view", view);
+
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, NULL);
+      glfwSwapBuffers(window);
+
+      glfwPollEvents();
+    }
   }
-  glDeleteProgram(program);
+
   delete_mesh(mesh);
   glfwTerminate();
   return 0;
