@@ -61,16 +61,16 @@ void process_input(GLFWwindow *window, Camera *camera) {
   constexpr float SPEED = 0.1f;
 
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera->translate({0.0f, 0.0f, -SPEED});
+    camera->move(-SPEED);
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    camera->translate({-SPEED, 0.0f, 0.0f});
+    camera->strafe(-SPEED);
   }
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera->translate({0.0f, 0.0f, SPEED});
+    camera->move(SPEED);
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    camera->translate({SPEED, 0.0f, 0.0f});
+    camera->strafe(SPEED);
   }
 }
 
@@ -100,7 +100,7 @@ int main(void) {
   configure_vertex_layout();
 
   {
-    Shader program("assets/default.vert", "asserts/default.frag");
+    Shader program("assets/default.vert", "assets/default.frag");
     program.use();
     glm::mat4 projection = get_projection_matrix();
     program.set_uniform("u_projection", projection);

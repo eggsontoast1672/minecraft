@@ -13,9 +13,12 @@ public:
     return glm::lookAt(m_position, m_direction, up);
   }
 
-  constexpr void translate(glm::vec3 offset) { m_position += offset; }
+  void move(float amount);
+  void strafe(float amount);
 
 private:
   glm::vec3 m_position;
   glm::vec3 m_direction;
+
+  glm::vec3 compute_forward() const;
 };

@@ -19,6 +19,7 @@ pkg_check_modules(GLFW REQUIRED glfw3)
 
 add_executable(
   minecraft
+  src/camera.cpp
   src/filesystem.cpp
   src/glad.c
   src/main.cpp
